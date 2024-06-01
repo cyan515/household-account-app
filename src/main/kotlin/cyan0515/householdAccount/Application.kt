@@ -1,5 +1,7 @@
 package cyan0515.householdAccount
 
+import cyan0515.householdAccount.infrastructure.ExposedUserRepository
+import cyan0515.householdAccount.route.userRoutes
 import io.ktor.server.application.*
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -8,6 +10,8 @@ import io.ktor.serialization.jackson.jackson
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.module() {
     install(ContentNegotiation) {
@@ -21,10 +25,15 @@ fun Application.module() {
         password = "password"
     )
 
+    transaction {
+        SchemaUtils.create(ExposedUserRepository)
+    }
+
     routing {
         get("/") {
             call.respondText("Hello Ktor!")
         }
+        userRoutes()
     }
 }
 
