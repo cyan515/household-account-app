@@ -1,4 +1,4 @@
-package cyan0515.household
+package cyan0515.householdAccount
 
 import io.ktor.server.application.*
 import io.ktor.server.engine.embeddedServer
