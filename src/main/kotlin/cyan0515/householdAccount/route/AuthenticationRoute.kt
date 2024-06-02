@@ -26,7 +26,7 @@ fun Route.authRoutes(secret: String, issuer: String,audience: String) {
     }
 }
 
-fun validateUser(userName: String, password: String): User? {
+private fun validateUser(userName: String, password: String): User? {
     return transaction {
         Users
             .select { Users.userName eq userName }
@@ -35,7 +35,7 @@ fun validateUser(userName: String, password: String): User? {
     }
 }
 
-fun generateToken(userName: String, secret: String, issuer: String, audience: String): String {
+private fun generateToken(userName: String, secret: String, issuer: String, audience: String): String {
     return JWT.create()
         .withAudience(audience)
         .withIssuer(issuer)
