@@ -11,6 +11,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.mindrot.jbcrypt.BCrypt
 
 fun Route.userRoutes() {
     route("/users") {
@@ -21,7 +22,7 @@ fun Route.userRoutes() {
                 transaction {
                     Users.insert {
                         it[userName] = user.userName
-                        it[password] = user.password
+                        it[password] = BCrypt.hashpw(user.password, BCrypt.gensalt());
                     }
                 }
             } catch (e: Exception) {

@@ -13,6 +13,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.mindrot.jbcrypt.BCrypt
 
 fun Route.authRoutes(secret: String, issuer: String, audience: String) {
 
@@ -32,7 +33,7 @@ private fun validateUser(userName: String, password: String): User? {
     return transaction {
         Users
             .select { Users.userName eq userName }
-            .singleOrNull { it[Users.password] == password }
+            .singleOrNull { BCrypt.checkpw(password, it[Users.password]) }
             ?.let { User(userName, password) }
     }
 }
