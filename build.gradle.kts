@@ -3,8 +3,9 @@ plugins {
     application
 }
 
-group = "cyan0515.household-account-app"
-version = "1.0-SNAPSHOT"
+val group = "cyan0515.household-account-app"
+val version = "1.0-SNAPSHOT"
+val authVersion = "2.2.4"
 
 repositories {
     mavenCentral()
@@ -19,6 +20,8 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao:0.41.1")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
     implementation("org.postgresql:postgresql:42.6.0")
+    implementation("io.ktor:ktor-server-auth-jwt:$authVersion")
+    implementation("io.ktor:ktor-server-auth:$authVersion")
     testImplementation(kotlin("test"))
 }
 
