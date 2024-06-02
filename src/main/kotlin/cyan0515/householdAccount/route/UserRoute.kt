@@ -1,7 +1,7 @@
 package cyan0515.householdAccount.route
 
 import cyan0515.householdAccount.model.user.User
-import cyan0515.householdAccount.infrastructure.ExposedUserRepository
+import cyan0515.householdAccount.infrastructure.Users
 import io.ktor.server.application.call
 import io.ktor.server.response.respond
 import io.ktor.server.request.receive
@@ -19,7 +19,7 @@ fun Route.userRoutes() {
             try {
                 val user = call.receive<User>()
                 transaction {
-                    ExposedUserRepository.insert {
+                    Users.insert {
                         it[userName] = user.userName
                         it[password] = user.password
                     }
