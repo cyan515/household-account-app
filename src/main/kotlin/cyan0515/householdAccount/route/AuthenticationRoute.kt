@@ -32,7 +32,7 @@ fun Route.authRoutes(secret: String, issuer: String, audience: String) {
 private fun validateUser(userName: String, password: String): User? {
     return transaction {
         Users
-            .select { Users.userName eq userName }
+            .select { Users.name eq userName }
             .singleOrNull { BCrypt.checkpw(password, it[Users.password]) }
             ?.let { User(userName, password) }
     }

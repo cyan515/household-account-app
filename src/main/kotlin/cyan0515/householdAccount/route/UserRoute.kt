@@ -21,7 +21,7 @@ fun Route.userRoutes() {
                 val user = call.receive<User>()
                 transaction {
                     Users.insert {
-                        it[userName] = user.userName
+                        it[name] = user.userName
                         it[password] = BCrypt.hashpw(user.password, BCrypt.gensalt());
                     }
                 }
