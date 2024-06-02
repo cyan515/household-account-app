@@ -32,7 +32,7 @@ fun Application.module() {
     }
 
     val environment: ApplicationEnvironment = applicationEngineEnvironment {
-        config = HoconApplicationConfig(ConfigFactory.parseFile(File("src/main/resources/application.conf")))
+        config = HoconApplicationConfig(ConfigFactory.parseFile(File("src/main/resources/application.conf")).resolve())
     }
     val jwtAudience = environment.config.property("jwt.audience").getString()
     val jwtRealm = environment.config.property("jwt.realm").getString()
