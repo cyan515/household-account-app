@@ -22,6 +22,7 @@ dependencies {
     implementation("org.postgresql:postgresql:42.6.0")
     implementation("io.ktor:ktor-server-auth-jwt:$authVersion")
     implementation("io.ktor:ktor-server-auth:$authVersion")
+    implementation("org.mindrot:jbcrypt:0.4")
     testImplementation(kotlin("test"))
 }
 
