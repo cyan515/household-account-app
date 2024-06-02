@@ -3,8 +3,8 @@ package cyan0515.householdAccount
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.typesafe.config.ConfigFactory
-import cyan0515.householdAccount.infrastructure.Users
 import cyan0515.householdAccount.route.authRoutes
+import cyan0515.householdAccount.route.categoryRoutes
 import cyan0515.householdAccount.route.userRoutes
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
@@ -23,8 +23,6 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import java.io.File
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.module() {
     install(ContentNegotiation) {
@@ -56,17 +54,14 @@ fun Application.module() {
         }
     }
 
-    configureDatabase()
-
-    transaction {
-        SchemaUtils.create(Users)
-    }
+    setupDatabase()
 
     routing {
         get("/") {
             call.respondText("Hello Ktor!")
         }
         userRoutes()
+        categoryRoutes()
         authRoutes(jwtSecret, jwtIssuer, jwtAudience)
     }
 }
