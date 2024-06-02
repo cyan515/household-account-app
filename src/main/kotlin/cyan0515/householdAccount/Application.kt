@@ -6,19 +6,25 @@ import com.typesafe.config.ConfigFactory
 import cyan0515.householdAccount.infrastructure.Users
 import cyan0515.householdAccount.route.authRoutes
 import cyan0515.householdAccount.route.userRoutes
-import io.ktor.server.application.*
+import io.ktor.serialization.jackson.jackson
+import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationEnvironment
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.jwt.jwt
+import io.ktor.server.config.HoconApplicationConfig
+import io.ktor.server.engine.applicationEngineEnvironment
+import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.jackson.jackson
-import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
-import io.ktor.server.config.*
-import io.ktor.server.engine.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import java.io.File
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.File
 
 fun Application.module() {
     install(ContentNegotiation) {
@@ -68,4 +74,3 @@ fun Application.module() {
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
 }
-

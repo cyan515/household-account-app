@@ -1,10 +1,9 @@
 package cyan0515.householdAccount
 
 import cyan0515.householdAccount.infrastructure.Users
-import io.ktor.server.application.*
+import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureDatabase() {
