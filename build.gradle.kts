@@ -21,11 +21,13 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
     implementation("org.postgresql:postgresql:42.7.3")
     implementation("io.ktor:ktor-server-auth-jwt:$authVersion")
     implementation("io.ktor:ktor-server-auth:$authVersion")
     implementation("org.mindrot:jbcrypt:0.4")
-    implementation ("ch.qos.logback:logback-classic:1.5.6")
+    implementation("ch.qos.logback:logback-classic:1.5.6")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.0")
     testImplementation(kotlin("test"))
 }
 

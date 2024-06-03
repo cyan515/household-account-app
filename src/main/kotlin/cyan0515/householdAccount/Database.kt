@@ -1,6 +1,8 @@
 package cyan0515.householdAccount
 
 import cyan0515.householdAccount.infrastructure.Categories
+import cyan0515.householdAccount.infrastructure.ReceiptDetails
+import cyan0515.householdAccount.infrastructure.Receipts
 import cyan0515.householdAccount.infrastructure.Users
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.Database
@@ -22,7 +24,7 @@ fun Application.setupDatabase() {
     )
 
     transaction {
-        SchemaUtils.create(Users, Categories)
+        SchemaUtils.create(Users, Categories, Receipts, ReceiptDetails)
         if (!isInitialized()) {
             Categories.insert { it[name] = "食費" }
             Categories.insert { it[name] = "衣料品費" }
