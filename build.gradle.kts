@@ -27,6 +27,7 @@ dependencies {
     implementation("io.ktor:ktor-server-auth:$authVersion")
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("ch.qos.logback:logback-classic:1.5.6")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.0")
     testImplementation(kotlin("test"))
 }
 
