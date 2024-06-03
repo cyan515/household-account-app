@@ -5,5 +5,5 @@ import org.jetbrains.exposed.sql.javatime.datetime
 
 object Receipts : IntIdTable() {
     val userId = integer("userId").references(Users.id)
-    val timestamp = datetime("timestamp")
+    val dateTime = datetime("dateTime")
 }

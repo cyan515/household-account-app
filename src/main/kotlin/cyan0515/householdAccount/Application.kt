@@ -2,9 +2,12 @@ package cyan0515.householdAccount
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.typesafe.config.ConfigFactory
 import cyan0515.householdAccount.route.authRoutes
 import cyan0515.householdAccount.route.categoryRoutes
+import cyan0515.householdAccount.route.receiptRoutes
 import cyan0515.householdAccount.route.userRoutes
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
@@ -26,7 +29,10 @@ import java.io.File
 
 fun Application.module() {
     install(ContentNegotiation) {
-        jackson { }
+        jackson {
+            registerModule(JavaTimeModule())
+            disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        }
     }
 
     val environment: ApplicationEnvironment = applicationEngineEnvironment {
@@ -62,6 +68,7 @@ fun Application.module() {
         }
         userRoutes()
         categoryRoutes()
+        receiptRoutes()
         authRoutes(jwtSecret, jwtIssuer, jwtAudience)
     }
 }
