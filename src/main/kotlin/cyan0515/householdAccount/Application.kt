@@ -27,13 +27,15 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import java.io.File
 
-fun Application.module() {
+fun Application.module(test: Boolean = false) {
     install(ContentNegotiation) {
         jackson {
             registerModule(JavaTimeModule())
             disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
         }
     }
+
+    if(!test) setupKoin()
 
     val environment: ApplicationEnvironment = applicationEngineEnvironment {
         config = HoconApplicationConfig(ConfigFactory.parseFile(File("src/main/resources/application.conf")).resolve())
@@ -60,7 +62,7 @@ fun Application.module() {
         }
     }
 
-    setupDatabase()
+    if(!test) setupDatabase()
 
     routing {
         get("/") {

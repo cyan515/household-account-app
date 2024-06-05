@@ -6,6 +6,7 @@ plugins {
 val group = "cyan0515.household-account-app"
 val version = "1.0-SNAPSHOT"
 val ktorVersion = "2.3.11"
+val koinVersion = "3.5.6"
 val exposedVersion = "0.41.1"
 val authVersion = "2.2.4"
 
@@ -28,7 +29,11 @@ dependencies {
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("ch.qos.logback:logback-classic:1.5.6")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.0")
+    implementation("io.insert-koin:koin-core:$koinVersion")
+    implementation("io.insert-koin:koin-ktor:$koinVersion")
     testImplementation(kotlin("test"))
+    testImplementation("io.ktor:ktor-server-tests:$ktorVersion")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.9.23")
 }
 
 application {
