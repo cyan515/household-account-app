@@ -20,7 +20,7 @@ fun Route.receiptRoutes() {
     val repository by inject<IReceiptRepository>()
     val userRepository by inject<IUserRepository>()
 
-    route("/receipt") {
+    route("/receipts") {
 
         authenticate {
             post {
