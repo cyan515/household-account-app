@@ -10,8 +10,8 @@ object TestReceiptRepository : IReceiptRepository {
     val detailContent: HashMap<Int, ReceiptDetail> = HashMap()
     override fun create(user: User, receipt: Receipt): Int {
         val userId = TestUserRepository.content
-            .filterValues { e -> e == user }
-            .firstNotNullOf { e -> e.key }
+            .filterValues { it == user }
+            .firstNotNullOf { it.key }
         content[receipt.hashCode() to userId] = receipt
         receipt.details.forEach { detailContent.plus(it.hashCode() to it) }
         return receipt.hashCode()
