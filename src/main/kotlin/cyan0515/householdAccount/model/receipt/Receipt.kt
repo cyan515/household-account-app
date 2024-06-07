@@ -7,6 +7,4 @@ data class Receipt(
     val dateTime: LocalDateTime,
     val details: List<ReceiptDetail>,
     val id: String = UUID.randomUUID().toString()
-) {
-
-}
+)
