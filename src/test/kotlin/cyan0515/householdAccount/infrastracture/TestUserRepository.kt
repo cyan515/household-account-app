@@ -6,14 +6,13 @@ import org.mindrot.jbcrypt.BCrypt
 
 object TestUserRepository : IUserRepository {
     val content: HashMap<Int, User> = HashMap()
-    override fun create(user: User): Int {
+    override fun create(user: User) {
         val hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt())
-        val encryptedUser = User(user.userName, hashedPassword)
+        val encryptedUser = User(user.name, hashedPassword)
         content[encryptedUser.hashCode()] = encryptedUser
-        return encryptedUser.hashCode()
     }
 
     override fun read(name: String): User? {
-        return content.values.firstOrNull { it.userName == name }
+        return content.values.firstOrNull { it.name == name }
     }
 }

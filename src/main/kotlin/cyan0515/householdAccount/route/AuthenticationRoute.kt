@@ -21,11 +21,11 @@ fun Route.authRoutes(secret: String, issuer: String, audience: String) {
     post("/login") {
         val loginRequest = call.receive<User>()
         val user = userRepository
-            .read(loginRequest.userName)
+            .read(loginRequest.name)
             ?.password
             ?.let { BCrypt.checkpw(loginRequest.password, it) }
         if (user != null) {
-            val token = generateToken(loginRequest.userName, secret, issuer, audience)
+            val token = generateToken(loginRequest.name, secret, issuer, audience)
             call.respond(token)
         } else {
             call.respondText("Invalid credentials", status = HttpStatusCode.Unauthorized)

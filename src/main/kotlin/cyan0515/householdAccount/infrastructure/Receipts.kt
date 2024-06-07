@@ -3,35 +3,32 @@ package cyan0515.householdAccount.infrastructure
 import cyan0515.householdAccount.model.receipt.IReceiptRepository
 import cyan0515.householdAccount.model.receipt.Receipt
 import cyan0515.householdAccount.model.user.User
-import org.jetbrains.exposed.dao.id.IntIdTable
+import java.util.UUID
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.javatime.datetime
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 
-object Receipts : IntIdTable(), IReceiptRepository {
-    val userId = integer("user_id").references(Users.id)
-    val dateTime = datetime("date_time")
+object Receipts : Table(), IReceiptRepository {
+    val id = uuid("id").uniqueIndex()
+    private val userId = uuid("user_id").references(Users.id)
+    private val dateTime = datetime("date_time")
 
-    override fun create(user: User, receipt: Receipt): Int {
-        return transaction {
-            val userId = transaction {
-                Users.select { Users.name eq user.userName }.map { it[Users.id] }.single().value
-            }
-            val id = Receipts.insertAndGetId {
-                it[this.userId] = userId
+    override fun create(user: User, receipt: Receipt) {
+        transaction {
+            insert {
+                it[this.id] = UUID.fromString(receipt.id)
+                it[this.userId] = UUID.fromString(user.id)
                 it[this.dateTime] = receipt.dateTime
-            }.value
+            }
             receipt.details.forEach { detail ->
                 ReceiptDetails.insert {
-                    it[this.receiptId] = id
-                    it[this.categoryId] = detail.categoryId
+                    it[this.receiptId] = UUID.fromString(receipt.id)
+                    it[this.categoryId] = UUID.fromString(detail.categoryId)
                     it[this.itemName] = detail.itemName
                     it[this.amount] = detail.amount
                 }
             }
-            return@transaction id
         }
     }
 

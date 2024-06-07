@@ -48,8 +48,7 @@ class ApiTest {
             "借入返済"
         )
             .map(::Category)
-            .mapIndexed { i, ele -> Pair(i + 1, ele) }
-            .let(TestCategoryRepository.content::putAll)
+            .map(TestCategoryRepository::create)
     }
 
     @AfterEach
@@ -70,7 +69,7 @@ class ApiTest {
         }
         val res = client.post("/users") {
             contentType(Json)
-            setBody(""" {"userName":"foo","password":"pass"} """)
+            setBody(""" {"name":"foo","password":"pass"} """)
         }
         assertEquals(HttpStatusCode.Created, res.status)
     }
@@ -85,11 +84,11 @@ class ApiTest {
         }
         client.post("/users") {
             contentType(Json)
-            setBody(""" {"userName":"foo","password":"pass"} """)
+            setBody(""" {"name":"foo","password":"pass"} """)
         }
         val res = client.post("/login") {
             contentType(Json)
-            setBody(""" {"userName":"foo","password":"pass"} """)
+            setBody(""" {"name":"foo","password":"pass"} """)
         }
         assertEquals(HttpStatusCode.OK, res.status)
     }
@@ -104,11 +103,11 @@ class ApiTest {
         }
         client.post("/users") {
             contentType(Json)
-            setBody(""" {"userName":"foo","password":"pass"} """)
+            setBody(""" {"name":"foo","password":"pass"} """)
         }
         val authRes = client.post("/login") {
             contentType(Json)
-            setBody(""" {"userName":"foo","password":"pass"} """)
+            setBody(""" {"name":"foo","password":"pass"} """)
         }
         val res = client.get("/categories") {
             contentType(Json)
@@ -127,11 +126,11 @@ class ApiTest {
         }
         client.post("/users") {
             contentType(Json)
-            setBody(""" {"userName":"foo","password":"pass"} """)
+            setBody(""" {"name":"foo","password":"pass"} """)
         }
         val authRes = client.post("/login") {
             contentType(Json)
-            setBody(""" {"userName":"foo","password":"pass"} """)
+            setBody(""" {"name":"foo","password":"pass"} """)
         }
         val receipt = """
             {
