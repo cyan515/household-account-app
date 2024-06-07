@@ -58,7 +58,7 @@ fun Route.receiptRoutes() {
                 }
 
                 val receipts = repository.readByUser(user)
-                val summary = receiptService.summarize(receipts)
+                val summary = receiptService.summarize(receipts).mapKeys { it.key.name }
 
                 call.respond(summary)
             }

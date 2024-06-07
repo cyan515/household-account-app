@@ -139,12 +139,12 @@ class ApiTest {
               "dateTime": "2020-01-01T12:30:00",
               "details": [
                 {
-                  "categoryId": $foodCostId,
+                  "categoryId": "$foodCostId",
                   "itemName": "卵",
                   "amount": 150
                 },
                 {
-                  "categoryId": $foodCostId,
+                  "categoryId": "$foodCostId",
                   "itemName": "牛乳",
                   "amount": 200
                 }
@@ -181,12 +181,12 @@ class ApiTest {
               "dateTime": "2020-01-01T12:30:00",
               "details": [
                 {
-                  "categoryId": $foodCostId,
+                  "categoryId": "$foodCostId",
                   "itemName": "卵",
                   "amount": 150
                 },
                 {
-                  "categoryId": $foodCostId,
+                  "categoryId": "$foodCostId",
                   "itemName": "牛乳",
                   "amount": 200
                 }
@@ -202,7 +202,7 @@ class ApiTest {
             contentType(Json)
             header("Authorization", "Bearer ${authRes.bodyAsText()}")
         }
-        println(res.bodyAsText())
+        assertEquals("""{"食費":350}""", res.bodyAsText())
         assertEquals(HttpStatusCode.OK, res.status)
     }
 
