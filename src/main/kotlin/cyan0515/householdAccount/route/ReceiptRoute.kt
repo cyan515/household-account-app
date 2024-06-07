@@ -15,6 +15,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import java.time.LocalDate
 import org.koin.ktor.ext.inject
 
 fun Route.receiptRoutes() {
@@ -28,11 +29,8 @@ fun Route.receiptRoutes() {
 
         authenticate {
             post {
-                val user = call.principal<JWTPrincipal>()
-                    ?.payload
-                    ?.getClaim("userName")
-                    ?.asString()
-                    ?.let(userRepository::read)
+                val user =
+                    call.principal<JWTPrincipal>()?.payload?.getClaim("userName")?.asString()?.let(userRepository::read)
 
                 if (user == null) {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid token")
@@ -46,18 +44,18 @@ fun Route.receiptRoutes() {
             }
 
             get("/summaries") {
-                val user = call.principal<JWTPrincipal>()
-                    ?.payload
-                    ?.getClaim("userName")
-                    ?.asString()
-                    ?.let(userRepository::read)
+                val from = (call.parameters["from"]?.let(LocalDate::parse) ?: LocalDate.of(1900, 1, 1)).atStartOfDay()
+                val to = (call.parameters["to"]?.let(LocalDate::parse) ?: LocalDate.of(3000, 1, 1)).atStartOfDay()
+
+                val user =
+                    call.principal<JWTPrincipal>()?.payload?.getClaim("userName")?.asString()?.let(userRepository::read)
 
                 if (user == null) {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     return@get
                 }
 
-                val receipts = repository.readByUser(user)
+                val receipts = repository.readByUser(user).filter { from <= it.dateTime && it.dateTime <= to }
                 val summary = receiptService.summarize(receipts).mapKeys { it.key.name }
 
                 call.respond(summary)
