@@ -5,6 +5,7 @@ import cyan0515.householdAccount.infrastructure.Receipts
 import cyan0515.householdAccount.infrastructure.Users
 import cyan0515.householdAccount.model.category.ICategoryRepository
 import cyan0515.householdAccount.model.receipt.IReceiptRepository
+import cyan0515.householdAccount.model.service.ReceiptService
 import cyan0515.householdAccount.model.user.IUserRepository
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -15,6 +16,8 @@ fun Application.setupKoin() {
         single<IUserRepository> { Users }
         single<ICategoryRepository> { Categories }
         single<IReceiptRepository> { Receipts }
+
+        single { ReceiptService(get()) }
     }
     install(Koin) {
         modules(mods)
