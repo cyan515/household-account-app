@@ -6,13 +6,10 @@ import cyan0515.householdAccount.model.receipt.ReceiptDetail
 import cyan0515.householdAccount.model.user.User
 
 object TestReceiptRepository : IReceiptRepository {
-    val content: HashMap<Pair<String, Int>, Receipt> = HashMap()
+    val content: HashMap<Pair<String, String>, Receipt> = HashMap()
     val detailContent: HashMap<Int, ReceiptDetail> = HashMap()
     override fun create(user: User, receipt: Receipt) {
-        val userId = TestUserRepository.content
-            .filterValues { it == user }
-            .firstNotNullOf { it.key }
-        content[receipt.id to userId] = receipt
+        content[receipt.id to user.id] = receipt
         receipt.details.forEach { detailContent.plus(it.hashCode() to it) }
     }
 
