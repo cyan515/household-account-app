@@ -23,7 +23,7 @@ object Categories : Table(), ICategoryRepository {
 
     override fun readAll(): List<Category> {
         return transaction {
-            selectAll().map { Category(it[name]) }
+            selectAll().map { Category(it[name], it[Categories.id].toString()) }
         }
     }
 }

@@ -6,6 +6,7 @@ import cyan0515.householdAccount.infrastracture.TestUserRepository
 import cyan0515.householdAccount.model.category.Category
 import cyan0515.householdAccount.model.category.ICategoryRepository
 import cyan0515.householdAccount.model.receipt.IReceiptRepository
+import cyan0515.householdAccount.model.service.ReceiptService
 import cyan0515.householdAccount.model.user.IUserRepository
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -29,6 +30,8 @@ class ApiTest {
         single<IUserRepository> { TestUserRepository }
         single<ICategoryRepository> { TestCategoryRepository }
         single<IReceiptRepository> { TestReceiptRepository }
+
+        single { ReceiptService(get()) }
     }
 
     @BeforeEach
@@ -46,9 +49,7 @@ class ApiTest {
             "保険料",
             "税金",
             "借入返済"
-        )
-            .map(::Category)
-            .map(TestCategoryRepository::create)
+        ).map(::Category).map(TestCategoryRepository::create)
     }
 
     @AfterEach
@@ -132,17 +133,18 @@ class ApiTest {
             contentType(Json)
             setBody(""" {"name":"foo","password":"pass"} """)
         }
+        val foodCostId = TestCategoryRepository.content.filterValues { it.name == "食費" }.firstNotNullOf { it.key }
         val receipt = """
             {
               "dateTime": "2020-01-01T12:30:00",
               "details": [
                 {
-                  "categoryId": 1,
+                  "categoryId": $foodCostId,
                   "itemName": "卵",
                   "amount": 150
                 },
                 {
-                  "categoryId": 1,
+                  "categoryId": $foodCostId,
                   "itemName": "牛乳",
                   "amount": 200
                 }
@@ -155,6 +157,53 @@ class ApiTest {
             setBody(receipt)
         }
         assertEquals(HttpStatusCode.Created, res.status)
+    }
+
+    @Test
+    fun `get receipt summary`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules)
+        }
+        client.post("/users") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val authRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val foodCostId = TestCategoryRepository.content.filterValues { it.name == "食費" }.firstNotNullOf { it.key }
+        val receipt = """
+            {
+              "dateTime": "2020-01-01T12:30:00",
+              "details": [
+                {
+                  "categoryId": $foodCostId,
+                  "itemName": "卵",
+                  "amount": 150
+                },
+                {
+                  "categoryId": $foodCostId,
+                  "itemName": "牛乳",
+                  "amount": 200
+                }
+              ]
+            }
+        """.trimIndent()
+        client.post("/receipts") {
+            contentType(Json)
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+            setBody(receipt)
+        }
+        val res = client.get("/receipts/summaries") {
+            contentType(Json)
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+        }
+        println(res.bodyAsText())
+        assertEquals(HttpStatusCode.OK, res.status)
     }
 
 }

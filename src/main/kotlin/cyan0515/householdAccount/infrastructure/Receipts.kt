@@ -32,7 +32,7 @@ object Receipts : Table(), IReceiptRepository {
         }
     }
 
-    override fun select(user: User): List<Receipt> {
+    override fun readByUser(user: User): List<Receipt> {
         TODO("Not yet implemented")
     }
 }
