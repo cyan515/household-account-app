@@ -10,7 +10,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 object Users : Table(), IUserRepository {
     val id = uuid("id").uniqueIndex()
-    private val name = varchar("name", 50)
+    private val name = varchar("name", 50).uniqueIndex()
     private val password = varchar("password", 100)
 
     override fun create(user: User) {
