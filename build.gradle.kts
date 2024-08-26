@@ -5,10 +5,9 @@ plugins {
 
 val group = "cyan0515.household-account-app"
 val version = "1.0-SNAPSHOT"
-val ktorVersion = "2.3.11"
+val ktorVersion = "2.3.12"
 val koinVersion = "3.5.6"
 val exposedVersion = "0.41.1"
-val authVersion = "2.2.4"
 
 repositories {
     mavenCentral()
@@ -24,8 +23,8 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
     implementation("org.postgresql:postgresql:42.7.3")
-    implementation("io.ktor:ktor-server-auth-jwt:$authVersion")
-    implementation("io.ktor:ktor-server-auth:$authVersion")
+    implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
+    implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("ch.qos.logback:logback-classic:1.5.6")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.0")
