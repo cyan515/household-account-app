@@ -55,7 +55,7 @@ class ApiTest {
             "税金",
             "借入返済"
         ).map(::Category).map(TestCategoryRepository::create)
-        val testUser = User("foo", "pass")
+        val testUser = User(name = "foo", password = "pass")
         val foodCostId = TestCategoryRepository.content.filterValues { it.name == "食費" }.firstNotNullOf { it.key }
         val testReceipt1 = Receipt(
             LocalDateTime.parse("2000-01-01T12:30:00"),
