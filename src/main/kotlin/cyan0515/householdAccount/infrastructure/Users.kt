@@ -27,7 +27,7 @@ object Users : Table(), IUserRepository {
         return transaction {
             select { Users.name eq name }
                 .singleOrNull()
-                ?.let { User(it[Users.name], it[password]) }
+                ?.let { User(it[Users.id].toString(), it[Users.name], it[password]) }
         }
     }
 }
