@@ -4,14 +4,19 @@ import cyan0515.householdAccount.infrastructure.Categories
 import cyan0515.householdAccount.infrastructure.ReceiptDetails
 import cyan0515.householdAccount.infrastructure.Receipts
 import cyan0515.householdAccount.infrastructure.Users
+import cyan0515.householdAccount.model.category.Category
+import cyan0515.householdAccount.model.category.ICategoryRepository
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.koin.ktor.ext.inject
 
 fun Application.setupDatabase() {
+
+    val categoryRepository by inject<ICategoryRepository>()
+
     val dbUrl = "jdbc:postgresql://localhost:5432/household_db"
     val dbUser = "household_user"
     val dbPassword = "password"
@@ -26,18 +31,18 @@ fun Application.setupDatabase() {
     transaction {
         SchemaUtils.create(Users, Categories, Receipts, ReceiptDetails)
         if (!isInitialized()) {
-            Categories.insert { it[name] = "食費" }
-            Categories.insert { it[name] = "衣料品費" }
-            Categories.insert { it[name] = "住居費" }
-            Categories.insert { it[name] = "水道光熱費" }
-            Categories.insert { it[name] = "交通費" }
-            Categories.insert { it[name] = "医療費" }
-            Categories.insert { it[name] = "教育費" }
-            Categories.insert { it[name] = "娯楽費" }
-            Categories.insert { it[name] = "通信費" }
-            Categories.insert { it[name] = "保険料" }
-            Categories.insert { it[name] = "税金" }
-            Categories.insert { it[name] = "借入返済" }
+            categoryRepository.create(Category("食費"))
+            categoryRepository.create(Category("衣料品費"))
+            categoryRepository.create(Category("住居費"))
+            categoryRepository.create(Category("水道光熱費"))
+            categoryRepository.create(Category("交通費"))
+            categoryRepository.create(Category("医療費"))
+            categoryRepository.create(Category("教育費"))
+            categoryRepository.create(Category("娯楽費"))
+            categoryRepository.create(Category("通信費"))
+            categoryRepository.create(Category("保険料"))
+            categoryRepository.create(Category("税金"))
+            categoryRepository.create(Category("借入返済"))
         }
     }
 }
