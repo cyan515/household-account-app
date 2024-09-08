@@ -25,7 +25,6 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
-import java.io.File
 
 fun Application.module(test: Boolean = false) {
     install(ContentNegotiation) {
@@ -35,10 +34,10 @@ fun Application.module(test: Boolean = false) {
         }
     }
 
-    if(!test) setupKoin()
+    if (!test) setupKoin()
 
     val environment: ApplicationEnvironment = applicationEngineEnvironment {
-        config = HoconApplicationConfig(ConfigFactory.parseFile(File("src/main/resources/application.conf")).resolve())
+        config = HoconApplicationConfig(ConfigFactory.load())
     }
     val jwtAudience = environment.config.property("jwt.audience").getString()
     val jwtRealm = environment.config.property("jwt.realm").getString()
@@ -62,7 +61,7 @@ fun Application.module(test: Boolean = false) {
         }
     }
 
-    if(!test) setupDatabase()
+    if (!test) setupDatabase()
 
     routing {
         get("/") {
