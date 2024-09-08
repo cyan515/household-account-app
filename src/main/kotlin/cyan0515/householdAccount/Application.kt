@@ -11,14 +11,12 @@ import cyan0515.householdAccount.route.receiptRoutes
 import cyan0515.householdAccount.route.userRoutes
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationEnvironment
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
-import io.ktor.server.config.HoconApplicationConfig
-import io.ktor.server.engine.applicationEngineEnvironment
+import io.ktor.server.config.tryGetString
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -36,13 +34,11 @@ fun Application.module(test: Boolean = false) {
 
     if (!test) setupKoin()
 
-    val environment: ApplicationEnvironment = applicationEngineEnvironment {
-        config = HoconApplicationConfig(ConfigFactory.load())
-    }
-    val jwtAudience = environment.config.property("jwt.audience").getString()
-    val jwtRealm = environment.config.property("jwt.realm").getString()
-    val jwtSecret = environment.config.property("jwt.secret").getString()
-    val jwtIssuer = environment.config.property("jwt.domain").getString()
+    val config = ConfigFactory.load()
+    val jwtAudience = config.getString("jwt.audience")
+    val jwtRealm = config.getString("jwt.realm")
+    val jwtSecret = config.tryGetString("jwt.secret") ?: "secret"
+    val jwtIssuer = config.getString("jwt.domain")
 
     install(Authentication) {
         jwt {

@@ -13,6 +13,7 @@ services:
       - DB_NAME=household_db
       - DB_USER=household_user
       - DB_PASSWORD=password
+      - DB_URL=jdbc:postgresql://db:5432/household_db
     depends_on:
       - db
     networks:
