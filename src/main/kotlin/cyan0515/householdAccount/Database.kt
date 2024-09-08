@@ -17,7 +17,7 @@ fun Application.setupDatabase() {
 
     val categoryRepository by inject<ICategoryRepository>()
 
-    val dbUrl = "jdbc:postgresql://localhost:5432/household_db"
+    val dbUrl = "jdbc:postgresql://db:5432/household_db"
     val dbUser = "household_user"
     val dbPassword = "password"
 

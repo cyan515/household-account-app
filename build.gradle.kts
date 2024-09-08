@@ -36,7 +36,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("cyan0515.household.ApplicationKt")
+    mainClass.set("cyan0515.householdAccount.ApplicationKt")
 }
 
 tasks.test {
