@@ -1,5 +1,6 @@
 package cyan0515.householdAccount
 
+import com.typesafe.config.ConfigFactory
 import cyan0515.householdAccount.infrastructure.Categories
 import cyan0515.householdAccount.infrastructure.ReceiptDetails
 import cyan0515.householdAccount.infrastructure.Receipts
@@ -7,6 +8,7 @@ import cyan0515.householdAccount.infrastructure.Users
 import cyan0515.householdAccount.model.category.Category
 import cyan0515.householdAccount.model.category.ICategoryRepository
 import io.ktor.server.application.Application
+import io.ktor.server.config.tryGetString
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.selectAll
@@ -17,9 +19,10 @@ fun Application.setupDatabase() {
 
     val categoryRepository by inject<ICategoryRepository>()
 
-    val dbUrl = "jdbc:postgresql://db:5432/household_db"
-    val dbUser = "household_user"
-    val dbPassword = "password"
+    val config = ConfigFactory.load()
+    val dbUrl = config.tryGetString("db.url") ?: "jdbc:postgresql://localhost:5432/household_db"
+    val dbUser = config.getString("db.user")
+    val dbPassword = config.tryGetString("db.password") ?: "password"
 
     Database.connect(
         url = dbUrl,
