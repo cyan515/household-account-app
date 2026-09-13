@@ -32,6 +32,8 @@ fun Application.module(test: Boolean = false) {
         }
     }
 
+    setupErrorHandling()
+
     if (!test) setupKoin()
 
     val config = ConfigFactory.load()

@@ -24,15 +24,19 @@ import io.ktor.server.testing.testApplication
 import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
+import org.mindrot.jbcrypt.BCrypt
 
 class ApiTest {
 
-    private val testModules = module {
-        single<IUserRepository> { TestUserRepository }
+    private fun testModules(userRepository: IUserRepository = TestUserRepository) = module {
+        single<IUserRepository> { userRepository }
         single<ICategoryRepository> { TestCategoryRepository }
         single<IReceiptRepository> { TestReceiptRepository }
 
@@ -55,7 +59,7 @@ class ApiTest {
             "税金",
             "借入返済"
         ).map(::Category).map(TestCategoryRepository::create)
-        val testUser = User(name = "foo", password = "pass")
+        val testUser = User(name = "foo", password = BCrypt.hashpw("pass", BCrypt.gensalt()))
         val foodCostId = TestCategoryRepository.content.filterValues { it.name == "食費" }.firstNotNullOf { it.key }
         val testReceipt1 = Receipt(
             LocalDateTime.parse("2000-01-01T12:30:00"),
@@ -98,13 +102,132 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val res = client.post("/users") {
             contentType(Json)
             setBody(""" {"name":"bar","password":"pass"} """)
         }
         assertEquals(HttpStatusCode.Created, res.status)
+
+        val storedUser = TestUserRepository.read("bar")!!
+        assertNotEquals("pass", storedUser.password)
+        assertTrue(BCrypt.checkpw("pass", storedUser.password))
+
+        val loginRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"bar","password":"pass"} """)
+        }
+        assertEquals(HttpStatusCode.OK, loginRes.status)
+    }
+
+    @Test
+    fun `post duplicate user`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val res = client.post("/users") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+
+        assertEquals(HttpStatusCode.Conflict, res.status)
+        assertEquals(
+            """{"code":"user_already_exists","message":"User already exists"}""",
+            res.bodyAsText()
+        )
+    }
+
+    @Test
+    fun `post user with malformed body`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val res = client.post("/users") {
+            contentType(Json)
+            setBody(""" {"name":"bar" """)
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, res.status)
+        assertEquals(
+            """{"code":"invalid_request","message":"Request is invalid"}""",
+            res.bodyAsText()
+        )
+        assertNull(TestUserRepository.read("bar"))
+    }
+
+    @Test
+    fun `post user with missing password`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val res = client.post("/users") {
+            contentType(Json)
+            setBody(""" {"name":"bar"} """)
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, res.status)
+        assertEquals(
+            """{"code":"invalid_request","message":"Request is invalid"}""",
+            res.bodyAsText()
+        )
+        assertNull(TestUserRepository.read("bar"))
+    }
+
+    @Test
+    fun `login with malformed body`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val res = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo" """)
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, res.status)
+        assertEquals(
+            """{"code":"invalid_request","message":"Request is invalid"}""",
+            res.bodyAsText()
+        )
+    }
+
+    @Test
+    fun `post user returns internal server error when repository fails`() = testApplication {
+        val failingRepository = object : IUserRepository {
+            override fun create(user: User) {
+                throw IllegalStateException("internal details must not be exposed")
+            }
+
+            override fun read(name: String): User? = null
+        }
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules(failingRepository))
+        }
+        val res = client.post("/users") {
+            contentType(Json)
+            setBody(""" {"name":"bar","password":"pass"} """)
+        }
+
+        assertEquals(HttpStatusCode.InternalServerError, res.status)
+        assertEquals(
+            """{"code":"internal_server_error","message":"Internal server error"}""",
+            res.bodyAsText()
+        )
     }
 
     @Test
@@ -113,7 +236,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val res = client.post("/login") {
             contentType(Json)
@@ -128,7 +251,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val res = client.post("/login") {
             contentType(Json)
@@ -144,7 +267,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val res = client.post("/login") {
             contentType(Json)
@@ -160,7 +283,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val authRes = client.post("/login") {
             contentType(Json)
@@ -179,7 +302,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val authRes = client.post("/login") {
             contentType(Json)
@@ -212,7 +335,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val authRes = client.post("/login") {
             contentType(Json)
@@ -232,7 +355,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val authRes = client.post("/login") {
             contentType(Json)
@@ -253,7 +376,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val authRes = client.post("/login") {
             contentType(Json)
@@ -274,7 +397,7 @@ class ApiTest {
             module(test = true)
         }
         install(Koin) {
-            modules(testModules)
+            modules(testModules())
         }
         val authRes = client.post("/login") {
             contentType(Json)

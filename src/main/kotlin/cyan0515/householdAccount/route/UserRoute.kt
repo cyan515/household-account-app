@@ -19,14 +19,12 @@ fun Route.userRoutes() {
     route("/users") {
 
         post {
-            try {
-                val user = call.receive<User>()
-                val encryptedUser = User(name = user.name, password = BCrypt.hashpw(user.password, BCrypt.gensalt()))
-                repository.create(encryptedUser)
-            } catch (e: Exception) {
-                println(e)
-                call.respond(HttpStatusCode.InternalServerError)
-            }
+            val request = call.receive<Credentials>()
+            val encryptedUser = User(
+                name = request.name,
+                password = BCrypt.hashpw(request.password, BCrypt.gensalt())
+            )
+            repository.create(encryptedUser)
             call.respond(HttpStatusCode.Created)
         }
     }
