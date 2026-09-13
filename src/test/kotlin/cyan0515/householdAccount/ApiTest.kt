@@ -108,7 +108,7 @@ class ApiTest {
     }
 
     @Test
-    fun login() = testApplication {
+    fun `login with valid credentials`() = testApplication {
         application {
             module(test = true)
         }
@@ -120,6 +120,38 @@ class ApiTest {
             setBody(""" {"name":"foo","password":"pass"} """)
         }
         assertEquals(HttpStatusCode.OK, res.status)
+    }
+
+    @Test
+    fun `login with incorrect password`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules)
+        }
+        val res = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"incorrect"} """)
+        }
+        assertEquals(HttpStatusCode.Unauthorized, res.status)
+        assertEquals("Invalid credentials", res.bodyAsText())
+    }
+
+    @Test
+    fun `login with unknown user`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules)
+        }
+        val res = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"unknown","password":"pass"} """)
+        }
+        assertEquals(HttpStatusCode.Unauthorized, res.status)
+        assertEquals("Invalid credentials", res.bodyAsText())
     }
 
     @Test
