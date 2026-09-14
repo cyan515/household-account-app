@@ -1,0 +1,11 @@
+apis:
+  household-account@v0:
+    root: ./openapi/openapi.yaml
+
+extends:
+  - recommended
+
+rules:
+  no-server-example.com: off
+  # GET / is a health check with no defined client-error response.
+  operation-4xx-response: off
