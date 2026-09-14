@@ -4,29 +4,37 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${PORT:-8080}:${PORT:-8080}"
     environment:
-      - DB_USER=${DB_USER:-household_user}
-      - DB_PASSWORD=${DB_PASSWORD:?DB_PASSWORD must be set}
-      - DB_URL=jdbc:postgresql://db:5432/${DB_NAME:-household_db}
-      - DB_MAXIMUM_POOL_SIZE=${DB_MAXIMUM_POOL_SIZE:-10}
-      - DB_MINIMUM_IDLE=${DB_MINIMUM_IDLE:-1}
-      - DB_CONNECTION_TIMEOUT_MILLIS=${DB_CONNECTION_TIMEOUT_MILLIS:-30000}
-      - DB_BASELINE_ON_MIGRATE=${DB_BASELINE_ON_MIGRATE:-false}
+      PORT: ${PORT:-8080}
+      DB_USER: ${DB_USER:-household_user}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-household_db}
+      DB_MAXIMUM_POOL_SIZE: ${DB_MAXIMUM_POOL_SIZE:-10}
+      DB_MINIMUM_IDLE: ${DB_MINIMUM_IDLE:-1}
+      DB_CONNECTION_TIMEOUT_MILLIS: ${DB_CONNECTION_TIMEOUT_MILLIS:-30000}
+      DB_BASELINE_ON_MIGRATE: ${DB_BASELINE_ON_MIGRATE:-false}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 
   db:
     image: postgres:14
-    container_name: household_db
     environment:
       POSTGRES_USER: ${DB_USER:-household_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
       POSTGRES_DB: ${DB_NAME:-household_db}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:

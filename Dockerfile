@@ -1,22 +1,20 @@
-# Use the official gradle image to create a build artifact.
-FROM gradle:7.6-jdk17 AS build
+FROM eclipse-temurin:17-jdk-jammy AS build
 
-# Copy local code to the container image.
-COPY build.gradle.kts .
-COPY gradle.properties .
+WORKDIR /workspace
+
+COPY gradle ./gradle
+COPY gradlew build.gradle.kts settings.gradle.kts gradle.properties ./
 COPY src ./src
 
-# Build a release artifact.
-RUN gradle installDist
+RUN ./gradlew installDist --no-daemon
 
-FROM openjdk:17-jdk
-RUN microdnf install findutils
-EXPOSE 8080:8080
-RUN mkdir /app
-COPY --from=build /home/gradle/build/install/gradle /app/
-WORKDIR /app/bin
+FROM eclipse-temurin:17-jre-jammy
 
-COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
-RUN chmod +x /usr/local/bin/wait-for-it.sh
+WORKDIR /app
 
-CMD ["sh", "-c", "/usr/local/bin/wait-for-it.sh db:5432 -- ./gradle"]
+COPY --from=build --chown=10001:10001 /workspace/build/install/household-account-app/ ./
+
+USER 10001:10001
+EXPOSE 8080
+
+ENTRYPOINT ["/app/bin/household-account-app"]
