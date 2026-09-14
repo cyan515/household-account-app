@@ -1,5 +1,6 @@
 package cyan0515.householdAccount.infrastructure
 
+import cyan0515.householdAccount.databaseTransaction
 import cyan0515.householdAccount.model.receipt.IReceiptRepository
 import cyan0515.householdAccount.model.receipt.Receipt
 import cyan0515.householdAccount.model.receipt.ReceiptDetail
@@ -10,15 +11,14 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.transaction
 
 object Receipts : Table(), IReceiptRepository {
     val id = uuid("id").uniqueIndex()
     private val userId = uuid("user_id").references(Users.id)
     private val dateTime = datetime("date_time")
 
-    override fun create(user: User, receipt: Receipt) {
-        transaction {
+    override suspend fun create(user: User, receipt: Receipt) {
+        databaseTransaction {
             insert {
                 it[this.id] = UUID.fromString(receipt.id)
                 it[this.userId] = UUID.fromString(user.id)
@@ -35,10 +35,10 @@ object Receipts : Table(), IReceiptRepository {
         }
     }
 
-    override fun readByUser(user: User): List<Receipt> {
+    override suspend fun readByUser(user: User): List<Receipt> {
         val targetUserId = UUID.fromString(user.id)
 
-        return transaction {
+        return databaseTransaction {
             (Receipts leftJoin ReceiptDetails)
                 .select { userId eq targetUserId }
                 .orderBy(

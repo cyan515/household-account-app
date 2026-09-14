@@ -29,11 +29,11 @@ fun Route.receiptRoutes() {
 
         authenticate {
             post {
-                val user = call.principal<JWTPrincipal>()
+                val userName = call.principal<JWTPrincipal>()
                     ?.payload
                     ?.getClaim("userName")
                     ?.asString()
-                    ?.let(userRepository::read)
+                val user = userName?.let { userRepository.read(it) }
 
                 if (user == null) {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid token")
@@ -50,11 +50,11 @@ fun Route.receiptRoutes() {
                 val from = (call.parameters["from"]?.let(LocalDate::parse) ?: LocalDate.of(1900, 1, 1)).atStartOfDay()
                 val to = (call.parameters["to"]?.let(LocalDate::parse) ?: LocalDate.of(3000, 1, 1)).atStartOfDay()
 
-                val user = call.principal<JWTPrincipal>()
+                val userName = call.principal<JWTPrincipal>()
                     ?.payload
                     ?.getClaim("userName")
                     ?.asString()
-                    ?.let(userRepository::read)
+                val user = userName?.let { userRepository.read(it) }
 
                 if (user == null) {
                     call.respond(HttpStatusCode.Unauthorized, "Invalid token")

@@ -7,7 +7,7 @@ import cyan0515.householdAccount.model.receipt.Receipt
 class ReceiptService(
     private val categoryRepository: ICategoryRepository
 ) {
-    fun summarize(receipts: List<Receipt>): Map<Category, Int> {
+    suspend fun summarize(receipts: List<Receipt>): Map<Category, Int> {
         val categoryMap = categoryRepository.readAll().associateBy { it.id }
 
         return receipts

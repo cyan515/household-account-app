@@ -8,12 +8,12 @@ import cyan0515.householdAccount.model.user.User
 object TestReceiptRepository : IReceiptRepository {
     val content: HashMap<Pair<String, String>, Receipt> = HashMap()
     val detailContent: HashMap<Int, ReceiptDetail> = HashMap()
-    override fun create(user: User, receipt: Receipt) {
+    override suspend fun create(user: User, receipt: Receipt) {
         content[receipt.id to user.id] = receipt
         receipt.details.forEach { detailContent.plus(it.hashCode() to it) }
     }
 
-    override fun readByUser(user: User): List<Receipt> {
+    override suspend fun readByUser(user: User): List<Receipt> {
         return content
             .filterKeys { (_, userId) -> userId == user.id }
             .values
