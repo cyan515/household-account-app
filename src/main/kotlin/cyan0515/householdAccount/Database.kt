@@ -1,55 +1,57 @@
 package cyan0515.householdAccount
 
-import com.typesafe.config.ConfigFactory
-import cyan0515.householdAccount.infrastructure.Categories
-import cyan0515.householdAccount.infrastructure.ReceiptDetails
-import cyan0515.householdAccount.infrastructure.Receipts
-import cyan0515.householdAccount.infrastructure.Users
-import cyan0515.householdAccount.model.category.Category
-import cyan0515.householdAccount.model.category.ICategoryRepository
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.Application
-import io.ktor.server.config.tryGetString
+import io.ktor.server.application.ApplicationStopped
+import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.MigrationVersion
+import org.flywaydb.core.api.output.MigrateResult
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.koin.ktor.ext.inject
 
 fun Application.setupDatabase() {
-
-    val categoryRepository by inject<ICategoryRepository>()
-
-    val config = ConfigFactory.load()
-    val dbUrl = config.tryGetString("db.url") ?: "jdbc:postgresql://localhost:5432/household_db"
-    val dbUser = config.getString("db.user")
-    val dbPassword = config.tryGetString("db.password") ?: "password"
-
-    Database.connect(
-        url = dbUrl,
-        driver = "org.postgresql.Driver",
-        user = dbUser,
-        password = dbPassword
-    )
-
-    transaction {
-        SchemaUtils.create(Users, Categories, Receipts, ReceiptDetails)
-        if (!isInitialized()) {
-            categoryRepository.create(Category("食費"))
-            categoryRepository.create(Category("衣料品費"))
-            categoryRepository.create(Category("住居費"))
-            categoryRepository.create(Category("水道光熱費"))
-            categoryRepository.create(Category("交通費"))
-            categoryRepository.create(Category("医療費"))
-            categoryRepository.create(Category("教育費"))
-            categoryRepository.create(Category("娯楽費"))
-            categoryRepository.create(Category("通信費"))
-            categoryRepository.create(Category("保険料"))
-            categoryRepository.create(Category("税金"))
-            categoryRepository.create(Category("借入返済"))
-        }
+    val settings = environment.config.readDatabaseSettings()
+    val databaseManager = DatabaseManager(settings)
+    databaseManager.initialize()
+    environment.monitor.subscribe(ApplicationStopped) {
+        databaseManager.close()
     }
 }
 
-private fun isInitialized(): Boolean {
-    return Categories.selectAll().toList().isNotEmpty()
+internal class DatabaseManager(private val settings: DatabaseSettings) : AutoCloseable {
+    val dataSource = HikariDataSource(
+        HikariConfig().apply {
+            jdbcUrl = settings.url
+            username = settings.user
+            password = settings.password
+            driverClassName = POSTGRESQL_DRIVER
+            maximumPoolSize = settings.maximumPoolSize
+            minimumIdle = settings.minimumIdle
+            connectionTimeout = settings.connectionTimeoutMillis
+            poolName = POOL_NAME
+        }
+    )
+
+    private val flyway = Flyway.configure()
+        .dataSource(dataSource)
+        .baselineOnMigrate(settings.baselineOnMigrate)
+        .baselineVersion(MigrationVersion.fromVersion(LEGACY_SCHEMA_VERSION))
+        .load()
+
+    fun initialize(): MigrateResult = try {
+        migrate().also { Database.connect(dataSource) }
+    } catch (exception: Exception) {
+        close()
+        throw exception
+    }
+
+    fun migrate(): MigrateResult = flyway.migrate()
+
+    override fun close() {
+        dataSource.close()
+    }
 }
+
+private const val POSTGRESQL_DRIVER = "org.postgresql.Driver"
+private const val POOL_NAME = "household-account-db"
+private const val LEGACY_SCHEMA_VERSION = "2"

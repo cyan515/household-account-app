@@ -9,6 +9,8 @@ val ktorVersion = "2.3.12"
 val koinVersion = "3.5.6"
 val exposedVersion = "0.41.1"
 val testcontainersVersion = "2.0.5"
+val hikariVersion = "7.1.0"
+val flywayVersion = "13.6.0"
 
 repositories {
     mavenCentral()
@@ -24,6 +26,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
     implementation("org.postgresql:postgresql:42.7.3")
+    implementation("com.zaxxer:HikariCP:$hikariVersion")
+    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
     implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
     implementation("org.mindrot:jbcrypt:0.4")
