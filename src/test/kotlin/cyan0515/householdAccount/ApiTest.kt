@@ -327,6 +327,154 @@ class ApiTest {
             setBody(receipt)
         }
         assertEquals(HttpStatusCode.Created, res.status)
+        assertEquals(4, TestReceiptRepository.content.size)
+    }
+
+    @Test
+    fun `post invalid receipt`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val authRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val res = client.post("/receipts") {
+            contentType(Json)
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+            setBody(
+                """
+                {
+                  "dateTime": "2020-01-01T12:30:00",
+                  "details": []
+                }
+                """.trimIndent()
+            )
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, res.status)
+        assertEquals(
+            """{"code":"invalid_receipt","message":"Receipt is invalid"}""",
+            res.bodyAsText()
+        )
+        assertEquals(3, TestReceiptRepository.content.size)
+    }
+
+    @Test
+    fun `post receipt with invalid date time`() = testApplication {
+        val foodCostId = TestCategoryRepository.content
+            .values
+            .first { it.name == "食費" }
+            .id
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val authRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val res = client.post("/receipts") {
+            contentType(Json)
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+            setBody(
+                """
+                {
+                  "dateTime": "not-a-date",
+                  "details": [
+                    {
+                      "categoryId": "$foodCostId",
+                      "itemName": "鶏肉",
+                      "amount": 500
+                    }
+                  ]
+                }
+                """.trimIndent()
+            )
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, res.status)
+        assertEquals(
+            """{"code":"invalid_request","message":"Request is invalid"}""",
+            res.bodyAsText()
+        )
+        assertEquals(3, TestReceiptRepository.content.size)
+    }
+
+    @Test
+    fun `get receipt summary with invalid date`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val authRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val res = client.get("/receipts/summaries") {
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+            parameter("from", "not-a-date")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, res.status)
+        assertEquals(
+            """{"code":"invalid_date_range","message":"Date range is invalid"}""",
+            res.bodyAsText()
+        )
+    }
+
+    @Test
+    fun `get receipt summary with reversed date range`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val authRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val res = client.get("/receipts/summaries") {
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+            parameter("from", "2030-01-01")
+            parameter("to", "2020-01-01")
+        }
+
+        assertEquals(HttpStatusCode.BadRequest, res.status)
+        assertEquals(
+            """{"code":"invalid_date_range","message":"Date range is invalid"}""",
+            res.bodyAsText()
+        )
+    }
+
+    @Test
+    fun `get receipt summary includes the whole to date`() = testApplication {
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val authRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val res = client.get("/receipts/summaries") {
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+            parameter("from", "2020-01-01")
+            parameter("to", "2020-01-01")
+        }
+
+        assertEquals(HttpStatusCode.OK, res.status)
+        assertEquals("""{"食費":350}""", res.bodyAsText())
     }
 
     @Test

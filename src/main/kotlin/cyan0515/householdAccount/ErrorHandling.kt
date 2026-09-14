@@ -1,6 +1,8 @@
 package cyan0515.householdAccount
 
 import cyan0515.householdAccount.model.user.UserAlreadyExistsException
+import cyan0515.householdAccount.model.receipt.InvalidDateRangeException
+import cyan0515.householdAccount.model.receipt.InvalidReceiptException
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -24,6 +26,18 @@ fun Application.setupErrorHandling() {
             call.respond(
                 HttpStatusCode.Conflict,
                 ErrorResponse("user_already_exists", "User already exists")
+            )
+        }
+        exception<InvalidReceiptException> { call, _ ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse("invalid_receipt", "Receipt is invalid")
+            )
+        }
+        exception<InvalidDateRangeException> { call, _ ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse("invalid_date_range", "Date range is invalid")
             )
         }
         exception<Throwable> { call, cause ->
