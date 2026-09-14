@@ -20,11 +20,11 @@ fun Route.authRoutes(secret: String, issuer: String, audience: String) {
 
     post("/login") {
         val loginRequest = call.receive<User>()
-        val user = userRepository
+        val passwordMatches = userRepository
             .read(loginRequest.name)
             ?.password
             ?.let { BCrypt.checkpw(loginRequest.password, it) }
-        if (user != null) {
+        if (passwordMatches == true) {
             val token = generateToken(loginRequest.name, secret, issuer, audience)
             call.respond(token)
         } else {
