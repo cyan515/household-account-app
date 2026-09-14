@@ -8,6 +8,7 @@ val version = "1.0-SNAPSHOT"
 val ktorVersion = "2.3.12"
 val koinVersion = "3.5.6"
 val exposedVersion = "0.41.1"
+val testcontainersVersion = "2.0.5"
 
 repositories {
     mavenCentral()
@@ -33,6 +34,9 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("io.ktor:ktor-server-tests:$ktorVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.9.23")
+    testImplementation(platform("org.testcontainers:testcontainers-bom:$testcontainersVersion"))
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
 }
 
 application {

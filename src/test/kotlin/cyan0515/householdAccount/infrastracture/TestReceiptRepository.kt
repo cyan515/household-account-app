@@ -14,7 +14,9 @@ object TestReceiptRepository : IReceiptRepository {
     }
 
     override fun readByUser(user: User): List<Receipt> {
-
-        return this.content.values.toList()
+        return content
+            .filterKeys { (_, userId) -> userId == user.id }
+            .values
+            .sortedWith(compareBy(Receipt::dateTime, Receipt::id))
     }
 }

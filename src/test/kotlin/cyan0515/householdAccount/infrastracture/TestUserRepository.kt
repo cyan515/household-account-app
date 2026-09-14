@@ -8,7 +8,7 @@ object TestUserRepository : IUserRepository {
     val content: HashMap<Int, User> = HashMap()
     override fun create(user: User) {
         val hashedPassword = BCrypt.hashpw(user.password, BCrypt.gensalt())
-        val encryptedUser = User(name = user.name, password = hashedPassword)
+        val encryptedUser = User(id = user.id, name = user.name, password = hashedPassword)
         content[encryptedUser.hashCode()] = encryptedUser
     }
 

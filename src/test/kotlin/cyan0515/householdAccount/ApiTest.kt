@@ -195,6 +195,41 @@ class ApiTest {
     }
 
     @Test
+    fun `get receipt summary only for authenticated user`() = testApplication {
+        val foodCostId = TestCategoryRepository.content
+            .values
+            .first { it.name == "食費" }
+            .id
+        val otherUser = User(name = "bar", password = "pass")
+        TestUserRepository.create(otherUser)
+        TestReceiptRepository.create(
+            otherUser,
+            Receipt(
+                LocalDateTime.parse("2020-01-01T12:30:00"),
+                listOf(ReceiptDetail("他ユーザーの支出", 999, foodCostId))
+            )
+        )
+
+        application {
+            module(test = true)
+        }
+        install(Koin) {
+            modules(testModules)
+        }
+        val authRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val res = client.get("/receipts/summaries") {
+            contentType(Json)
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+        }
+
+        assertEquals("""{"食費":590}""", res.bodyAsText())
+        assertEquals(HttpStatusCode.OK, res.status)
+    }
+
+    @Test
     fun `get receipt summary with from`() = testApplication {
         application {
             module(test = true)
