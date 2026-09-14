@@ -1,7 +1,5 @@
 package cyan0515.householdAccount
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.typesafe.config.ConfigFactory
@@ -9,6 +7,10 @@ import cyan0515.householdAccount.route.authRoutes
 import cyan0515.householdAccount.route.categoryRoutes
 import cyan0515.householdAccount.route.receiptRoutes
 import cyan0515.householdAccount.route.userRoutes
+import cyan0515.householdAccount.security.JwtSettings
+import cyan0515.householdAccount.security.JwtTokenService
+import cyan0515.householdAccount.security.USER_NAME_CLAIM
+import cyan0515.householdAccount.security.readJwtSettings
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -16,15 +18,39 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
-import io.ktor.server.config.tryGetString
+import io.ktor.server.config.HoconApplicationConfig
+import io.ktor.server.engine.applicationEngineEnvironment
+import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import java.time.Clock
 
-fun Application.module(test: Boolean = false) {
+fun Application.module() = configureApplication(
+    test = false,
+    jwtSettings = environment.config.readJwtSettings(),
+    jwtClock = Clock.systemUTC()
+)
+
+internal fun Application.configureForTest(
+    jwtSettingsOverride: JwtSettings? = null,
+    jwtClock: Clock = Clock.systemUTC()
+) = configureApplication(
+    test = true,
+    jwtSettings = jwtSettingsOverride ?: environment.config.readJwtSettings(),
+    jwtClock = jwtClock
+)
+
+private fun Application.configureApplication(
+    test: Boolean,
+    jwtSettings: JwtSettings,
+    jwtClock: Clock
+) {
+    val jwtTokenService = JwtTokenService(jwtSettings, jwtClock)
+
     install(ContentNegotiation) {
         jackson {
             registerModule(JavaTimeModule())
@@ -36,25 +62,13 @@ fun Application.module(test: Boolean = false) {
 
     if (!test) setupKoin()
 
-    val config = ConfigFactory.load()
-    val jwtAudience = config.getString("jwt.audience")
-    val jwtRealm = config.getString("jwt.realm")
-    val jwtSecret = config.tryGetString("jwt.secret") ?: "secret"
-    val jwtIssuer = config.getString("jwt.domain")
-
     install(Authentication) {
         jwt {
-            realm = jwtRealm
-
-            verifier(
-                JWT
-                    .require(Algorithm.HMAC256(jwtSecret))
-                    .withAudience(jwtAudience)
-                    .withIssuer(jwtIssuer)
-                    .build()
-            )
+            realm = jwtSettings.realm
+            verifier(jwtTokenService.verifier())
             validate { credential ->
-                if (credential.payload.audience.contains(jwtAudience)) JWTPrincipal(credential.payload) else null
+                val userName = credential.payload.getClaim(USER_NAME_CLAIM).asString()
+                if (userName.isNullOrBlank()) null else JWTPrincipal(credential.payload)
             }
         }
     }
@@ -68,10 +82,18 @@ fun Application.module(test: Boolean = false) {
         userRoutes()
         categoryRoutes()
         receiptRoutes()
-        authRoutes(jwtSecret, jwtIssuer, jwtAudience)
+        authRoutes(jwtTokenService)
     }
 }
 
 fun main() {
-    embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
+    val applicationConfig = HoconApplicationConfig(ConfigFactory.load())
+    val serverEnvironment = applicationEngineEnvironment {
+        config = applicationConfig
+        connector {
+            port = applicationConfig.property("ktor.deployment.port").getString().toInt()
+        }
+        module { module() }
+    }
+    embeddedServer(Netty, serverEnvironment).start(wait = true)
 }

@@ -1,8 +1,7 @@
 package cyan0515.householdAccount.route
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
 import cyan0515.householdAccount.model.user.IUserRepository
+import cyan0515.householdAccount.security.JwtTokenService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -13,7 +12,7 @@ import io.ktor.server.routing.post
 import org.koin.ktor.ext.inject
 import org.mindrot.jbcrypt.BCrypt
 
-fun Route.authRoutes(secret: String, issuer: String, audience: String) {
+fun Route.authRoutes(jwtTokenService: JwtTokenService) {
 
     val userRepository by inject<IUserRepository>()
 
@@ -24,18 +23,10 @@ fun Route.authRoutes(secret: String, issuer: String, audience: String) {
             ?.password
             ?.let { BCrypt.checkpw(loginRequest.password, it) }
         if (passwordMatches == true) {
-            val token = generateToken(loginRequest.name, secret, issuer, audience)
+            val token = jwtTokenService.generate(loginRequest.name)
             call.respond(token)
         } else {
             call.respondText("Invalid credentials", status = HttpStatusCode.Unauthorized)
         }
     }
-}
-
-private fun generateToken(userName: String, secret: String, issuer: String, audience: String): String {
-    return JWT.create()
-        .withAudience(audience)
-        .withIssuer(issuer)
-        .withClaim("userName", userName)
-        .sign(Algorithm.HMAC256(secret))
 }
