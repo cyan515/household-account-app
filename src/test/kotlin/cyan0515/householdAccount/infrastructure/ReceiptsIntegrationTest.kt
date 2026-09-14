@@ -2,6 +2,7 @@ package cyan0515.householdAccount.infrastructure
 
 import cyan0515.householdAccount.DatabaseManager
 import cyan0515.householdAccount.DatabaseSettings
+import cyan0515.householdAccount.databaseTransaction
 import cyan0515.householdAccount.setupDatabase
 import cyan0515.householdAccount.model.receipt.Receipt
 import cyan0515.householdAccount.model.receipt.ReceiptDetail
@@ -10,15 +11,22 @@ import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.testApplication
 import java.sql.DriverManager
 import java.time.LocalDateTime
+import java.util.concurrent.Executors
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.flywaydb.core.api.FlywayException
 import org.flywaydb.core.api.output.MigrateResult
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -147,13 +155,30 @@ class ReceiptsIntegrationTest {
     }
 
     @Test
-    fun `migrates empty database once and seeds categories`() {
+    fun `migrates empty database once and seeds categories`() = runBlocking {
         assertTrue(initialMigration.migrationsExecuted > 0)
         assertEquals(0, repeatedMigration.migrationsExecuted)
         assertEquals(EXPECTED_CATEGORY_NAMES, Categories.readAll().map { it.name }.toSet())
         assertEquals(4, databaseManager.dataSource.maximumPoolSize)
         assertEquals(1, databaseManager.dataSource.minimumIdle)
         assertTrue(databaseManager.dataSource.connection.use { it.isValid(1) })
+    }
+
+    @Test
+    fun `database transaction runs away from caller thread`() = runBlocking {
+        val callerDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+        try {
+            val (callerThread, databaseThread) = withContext(callerDispatcher) {
+                Thread.currentThread() to databaseTransaction {
+                    Categories.selectAll().count()
+                    Thread.currentThread()
+                }
+            }
+
+            assertNotSame(callerThread, databaseThread)
+        } finally {
+            callerDispatcher.close()
+        }
     }
 
     @Test
@@ -263,7 +288,7 @@ class ReceiptsIntegrationTest {
     }
 
     @Test
-    fun `reads receipts and details only for requested user`() {
+    fun `reads receipts and details only for requested user`() = runBlocking {
         val userA = User(name = "alice", password = "password")
         val userB = User(name = "bob", password = "password")
         val categories = Categories.readAll().associateBy { it.name }
@@ -296,7 +321,7 @@ class ReceiptsIntegrationTest {
     }
 
     @Test
-    fun `reads receipt without details`() {
+    fun `reads receipt without details`() = runBlocking {
         val user = User(name = "alice", password = "password")
         val receipt = Receipt(
             dateTime = LocalDateTime.parse("2024-01-01T12:30:00"),
@@ -309,7 +334,24 @@ class ReceiptsIntegrationTest {
     }
 
     @Test
-    fun `returns empty list when user has no receipts`() {
+    fun `rolls back receipt when a detail cannot be saved`() = runBlocking {
+        val user = User(name = "alice", password = "password")
+        val food = Categories.readAll().first { it.name == "食費" }
+        val receipt = Receipt(
+            dateTime = LocalDateTime.parse("2024-01-01T12:30:00"),
+            details = listOf(
+                ReceiptDetail("卵", 100, food.id),
+                ReceiptDetail("不明なカテゴリ", 200, "ffffffff-ffff-ffff-ffff-ffffffffffff")
+            )
+        )
+        Users.create(user)
+
+        assertFails { Receipts.create(user, receipt) }
+        assertTrue(Receipts.readByUser(user).isEmpty())
+    }
+
+    @Test
+    fun `returns empty list when user has no receipts`() = runBlocking {
         val user = User(name = "alice", password = "password")
         Users.create(user)
 

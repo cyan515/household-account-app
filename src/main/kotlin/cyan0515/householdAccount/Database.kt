@@ -4,10 +4,13 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
+import kotlinx.coroutines.Dispatchers
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.MigrationVersion
 import org.flywaydb.core.api.output.MigrateResult
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 fun Application.setupDatabase() {
     val settings = environment.config.readDatabaseSettings()
@@ -17,6 +20,9 @@ fun Application.setupDatabase() {
         databaseManager.close()
     }
 }
+
+internal suspend fun <T> databaseTransaction(block: Transaction.() -> T): T =
+    newSuspendedTransaction(context = Dispatchers.IO) { block() }
 
 internal class DatabaseManager(private val settings: DatabaseSettings) : AutoCloseable {
     val dataSource = HikariDataSource(

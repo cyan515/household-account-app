@@ -22,6 +22,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
 import java.time.LocalDateTime
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.junit.jupiter.api.AfterEach
@@ -40,7 +41,7 @@ class ApiTest {
     }
 
     @BeforeEach
-    fun setUp() {
+    fun setUp() = runBlocking {
         arrayOf(
             "食費",
             "衣料品費",
@@ -54,7 +55,7 @@ class ApiTest {
             "保険料",
             "税金",
             "借入返済"
-        ).map(::Category).map(TestCategoryRepository::create)
+        ).map(::Category).forEach { TestCategoryRepository.create(it) }
         val testUser = User(name = "foo", password = "pass")
         val foodCostId = TestCategoryRepository.content.filterValues { it.name == "食費" }.firstNotNullOf { it.key }
         val testReceipt1 = Receipt(
