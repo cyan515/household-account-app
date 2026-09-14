@@ -16,7 +16,10 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
+import io.ktor.server.config.HoconApplicationConfig
 import io.ktor.server.config.tryGetString
+import io.ktor.server.engine.applicationEngineEnvironment
+import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -71,5 +74,13 @@ fun Application.module(test: Boolean = false) {
 }
 
 fun main() {
-    embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
+    val applicationConfig = HoconApplicationConfig(ConfigFactory.load())
+    val serverEnvironment = applicationEngineEnvironment {
+        config = applicationConfig
+        connector {
+            port = applicationConfig.property("ktor.deployment.port").getString().toInt()
+        }
+        module { module() }
+    }
+    embeddedServer(Netty, serverEnvironment).start(wait = true)
 }
