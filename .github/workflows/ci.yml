@@ -14,6 +14,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Lint OpenAPI document
+        run: >-
+          docker run --rm
+          -e REDOCLY_TELEMETRY=off
+          -e REDOCLY_SUPPRESS_UPDATE_NOTICE=true
+          -v "$PWD:/spec:ro"
+          redocly/cli:2.52.1
+          lint --config=/spec/redocly.yaml /spec/openapi/openapi.yaml
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
