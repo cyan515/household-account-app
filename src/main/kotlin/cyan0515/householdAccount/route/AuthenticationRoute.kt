@@ -3,7 +3,6 @@ package cyan0515.householdAccount.route
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import cyan0515.householdAccount.model.user.IUserRepository
-import cyan0515.householdAccount.model.user.User
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -19,7 +18,7 @@ fun Route.authRoutes(secret: String, issuer: String, audience: String) {
     val userRepository by inject<IUserRepository>()
 
     post("/login") {
-        val loginRequest = call.receive<User>()
+        val loginRequest = call.receive<Credentials>()
         val passwordMatches = userRepository
             .read(loginRequest.name)
             ?.password
