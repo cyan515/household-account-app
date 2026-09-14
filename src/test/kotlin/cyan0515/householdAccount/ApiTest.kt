@@ -11,6 +11,7 @@ import cyan0515.householdAccount.model.receipt.ReceiptDetail
 import cyan0515.householdAccount.model.service.ReceiptService
 import cyan0515.householdAccount.model.user.IUserRepository
 import cyan0515.householdAccount.model.user.User
+import cyan0515.householdAccount.security.JwtSettings
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -20,8 +21,14 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType.Application.Json
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.server.application.Application
+import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.testApplication
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -34,6 +41,11 @@ import org.koin.ktor.plugin.Koin
 import org.mindrot.jbcrypt.BCrypt
 
 class ApiTest {
+
+    private fun Application.testModule(clock: Clock = Clock.systemUTC()) = configureForTest(
+        jwtSettingsOverride = TEST_JWT_SETTINGS,
+        jwtClock = clock
+    )
 
     private fun testModules(userRepository: IUserRepository = TestUserRepository) = module {
         single<IUserRepository> { userRepository }
@@ -99,7 +111,7 @@ class ApiTest {
     @Test
     fun `post user`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -124,7 +136,7 @@ class ApiTest {
     @Test
     fun `post duplicate user`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -144,7 +156,7 @@ class ApiTest {
     @Test
     fun `post user with malformed body`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -165,7 +177,7 @@ class ApiTest {
     @Test
     fun `post user with missing password`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -186,7 +198,7 @@ class ApiTest {
     @Test
     fun `login with malformed body`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -213,7 +225,7 @@ class ApiTest {
             override fun read(name: String): User? = null
         }
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules(failingRepository))
@@ -233,7 +245,7 @@ class ApiTest {
     @Test
     fun `login with valid credentials`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -246,9 +258,54 @@ class ApiTest {
     }
 
     @Test
+    fun `application reads jwt settings from environment configuration`() = testApplication {
+        environment {
+            config = MapApplicationConfig(
+                "jwt.secret" to TEST_JWT_SETTINGS.secret,
+                "jwt.domain" to TEST_JWT_SETTINGS.issuer,
+                "jwt.audience" to TEST_JWT_SETTINGS.audience,
+                "jwt.realm" to TEST_JWT_SETTINGS.realm,
+                "jwt.ttlSeconds" to TEST_JWT_SETTINGS.tokenTtl.seconds.toString()
+            )
+        }
+        application {
+            configureForTest()
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val res = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+
+        assertEquals(HttpStatusCode.OK, res.status)
+    }
+
+    @Test
+    fun `expired login token is rejected`() = testApplication {
+        application {
+            testModule(Clock.fixed(Instant.EPOCH, ZoneOffset.UTC))
+        }
+        install(Koin) {
+            modules(testModules())
+        }
+        val authRes = client.post("/login") {
+            contentType(Json)
+            setBody(""" {"name":"foo","password":"pass"} """)
+        }
+        val res = client.get("/categories") {
+            header("Authorization", "Bearer ${authRes.bodyAsText()}")
+        }
+
+        assertEquals(HttpStatusCode.OK, authRes.status)
+        assertEquals(HttpStatusCode.Unauthorized, res.status)
+    }
+
+    @Test
     fun `login with incorrect password`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -264,7 +321,7 @@ class ApiTest {
     @Test
     fun `login with unknown user`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -280,7 +337,7 @@ class ApiTest {
     @Test
     fun `get category`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -299,7 +356,7 @@ class ApiTest {
     @Test
     fun `post receipt`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -333,7 +390,7 @@ class ApiTest {
     @Test
     fun `post invalid receipt`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -370,7 +427,7 @@ class ApiTest {
             .first { it.name == "食費" }
             .id
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -409,7 +466,7 @@ class ApiTest {
     @Test
     fun `get receipt summary with invalid date`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -433,7 +490,7 @@ class ApiTest {
     @Test
     fun `get receipt summary with reversed date range`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -458,7 +515,7 @@ class ApiTest {
     @Test
     fun `get receipt summary includes the whole to date`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -480,7 +537,7 @@ class ApiTest {
     @Test
     fun `get receipt summary`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -500,7 +557,7 @@ class ApiTest {
     @Test
     fun `get receipt summary with from`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -521,7 +578,7 @@ class ApiTest {
     @Test
     fun `get receipt summary with to`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -542,7 +599,7 @@ class ApiTest {
     @Test
     fun `get receipt summary with from and to`() = testApplication {
         application {
-            module(test = true)
+            testModule()
         }
         install(Koin) {
             modules(testModules())
@@ -559,6 +616,16 @@ class ApiTest {
         }
         assertEquals("""{"食費":350}""", res.bodyAsText())
         assertEquals(HttpStatusCode.OK, res.status)
+    }
+
+    private companion object {
+        val TEST_JWT_SETTINGS = JwtSettings(
+            secret = "test-secret-with-at-least-32-characters",
+            issuer = "cyan0515.com",
+            audience = "myAudience",
+            realm = "myRealm",
+            tokenTtl = Duration.ofHours(1)
+        )
     }
 
 }
